@@ -1,0 +1,46 @@
+name: ETF Tracker - Telegram Updates
+
+on:
+  # Scheduled run every 30 minutes
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes
+  
+  # Manual trigger from GitHub UI
+  workflow_dispatch:
+  
+  # Webhook trigger for cron-job.org
+  repository_dispatch:
+    types: [etf-update]
+
+jobs:
+  track-etf:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests pytz
+    
+    - name: Run ETF Tracker
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        GOLD_API_KEY: ${{ secrets.GOLD_API_KEY }}
+      run: |
+        python etf_tracker.py
+    
+    - name: Log completion
+      if: always()
+      run: |
+        echo "ETF Tracker completed at $(date)"
+        echo "Status: ${{ job.status }}"
